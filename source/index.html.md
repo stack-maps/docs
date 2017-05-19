@@ -1,15 +1,9 @@
 ---
 title: Stack Map Reference Documentation
 
-language_tabs:
-  - php
-
 toc_footers:
   - <a href='#'>Sign Up for a Developer Key</a>
   - <a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a>
-
-includes:
-  - errors
 
 search: true
 ---
@@ -21,39 +15,32 @@ A PHP file is used for API Connection, which is fundamentally a glue to link all
 
 # Deployment instructions
 
-> To authorize, use this code:
+## Database
 
-```ruby
-require 'kittn'
+This project uses MySQL database. While any remote MySQL database can work, for security concerns it is the best to have the MySQL database and the access script on the same server, and disallow any remote access on the database.
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-```
+## Access API
+The access API acts as the getter/setter of the database. It provides an extra layer of security as it can deny attacks on the database. For this project, the access API comes in the form of a php script. It will need host, port, username and password of the database. To set up the API, simply replace those information at the top of the file, then upload it to a server.
 
-```python
-import kittn
+Custom security authorization logic should be added to this script to allow or deny database updating API calls. See the file for details on how to do so.
 
-api = kittn.authorize('meowmeowmeow')
-```
+## Map
+The map is what library patrons see when they click on a button. We wrap the map in a javascript file and provide a sample HTML page. To set this up, the javascript file should be uploaded to the same directory of wherever the actual MAP button is in the library catalogs, and in that HTML page, this javascript file should be imported, and the `displayMap(callno)` function should be called when the button is pressed.
 
-```shell
-# With shell, you can just pass the correct header with each request
-curl "api_endpoint_here"
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-```
-
-> Make sure to replace `meowmeowmeow` with your API key.
-
-Follow this guide to deploy our system.
+## Map Editor
+Once the server set up is complete, we need to create some library floor plans to actually use this system. Details of the map editor can be found in the accompanying repository [here](https://github.com/stack-maps/map-editor).
 
 # JSON Format
 
 ## library
+
+```json
+{
+  "library_id": 1,
+  "library_name": "Uris",
+  "floors": []
+}
+```
 
 Name | Type
 --------- | -----------
@@ -62,6 +49,18 @@ Name | Type
 `floors` | array of [floor](#floor) objects
 
 ## floor
+
+```json
+{
+  "floor_id": 1,
+  "floor_name": "Level 1",
+  "floor_order": 1,
+  "walls": [],
+  "aisle_areas": [],
+  "landmarks": [],
+  "library": 1
+}
+```
 
 Name | Type
 --------- | -----------
@@ -78,6 +77,16 @@ library refers to the library_id, which this floor belongs to..
 
 ## wall
 
+```json
+{
+  "start_x": 15.3,
+  "start_y": 16.8,
+  "end_x"  : 30.6,
+  "end_y"  : 33.6,
+  "floor"  : 1
+}
+```
+
 Name | Type
 --------- | -----------
 `wall_id`  | int
@@ -90,6 +99,17 @@ Name | Type
 floor refers to the floor_id, which this wall belongs to.
 
 ## aisle_area
+
+```json
+{
+  "center_x": 15.3,
+  "center_y": 16.8,
+  "width"  : 30.6,
+  "height"  : 33.6,
+  "rotation"  : 36,
+  "aisles" : []
+}
+```
 
 Name | Type
 --------- | -----------
@@ -105,6 +125,18 @@ Name | Type
 floor refers to the floor_id, which this aisle_area belongs to.
 
 ## aisle
+
+```json
+{
+  "center_x": 15.3,
+  "center_y": 16.8,
+  "length"  : 30.6,
+  "width"  : 33.6,
+  "rotation"  : 16,
+  "sides" : 2,
+  "call-range": []
+}
+```
 
 Name | Type
 --------- | -----------
@@ -124,6 +156,15 @@ floor refers to the floor_id, which this aisle belongs to.
 
 ## call_range
 
+```json
+{
+  "collection": "OVER",
+  "call_start": "E",
+  "call_end"  : "F",
+  "side"  : 2,
+}
+```
+
 Name | Type
 --------- | -----------
 `call_range_id`  | int
@@ -136,6 +177,17 @@ Name | Type
 aisle refers to the aisle_id, which this call_range belongs to.
 
 ## landmark
+
+```json
+{
+  "landmark_type" : "toilet",
+  "center_x": 15.3,
+  "center_y": 16.8,
+  "length"  : 30.6,
+  "width"  : 33.6,
+  "rotation"  : 16
+}
+```
 
 Name | Type
 --------- | -----------
@@ -153,6 +205,8 @@ floor refers to the floor_id, which this landmark belongs to.
 # API Functions
 
 The following are key functions provided by the API to allow interaction between the Map editor, Map generator and the database.
+
+They are called using POST and responses are formatted as a Json object specified above.
 
 ## login
 
