@@ -200,7 +200,7 @@
       <script src="javascripts/all.js"></script>
   </head>
 
-  <body class="index" data-languages="[&quot;php&quot;]">
+  <body class="index" data-languages="[]">
     <a href="#" id="nav-button">
       <span>
         NAV
@@ -209,9 +209,6 @@
     </a>
     <div class="tocify-wrapper">
       <img src="images/logo.png" alt="Logo" />
-        <div class="lang-selector">
-              <a href="#" data-language-name="php">php</a>
-        </div>
         <div class="search">
           <input type="text" class="search" id="input-search" placeholder="Search">
         </div>
@@ -232,32 +229,33 @@
 
 <h1 id="deployment-instructions">Deployment instructions</h1>
 
-<blockquote>
-<p>To authorize, use this code:</p>
-</blockquote>
-<pre class="highlight ruby tab-ruby"><code><span class="nb">require</span> <span class="s1">'kittn'</span>
+<h2 id="database">Database</h2>
 
-<span class="n">api</span> <span class="o">=</span> <span class="no">Kittn</span><span class="o">::</span><span class="no">APIClient</span><span class="p">.</span><span class="nf">authorize!</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">)</span>
-</code></pre><pre class="highlight python tab-python"><code><span class="kn">import</span> <span class="nn">kittn</span>
+<p>This project uses MySQL database. While any remote MySQL database can work, for security concerns it is the best to have the MySQL database and the access script on the same server, and disallow any remote access on the database.</p>
 
-<span class="n">api</span> <span class="o">=</span> <span class="n">kittn</span><span class="o">.</span><span class="n">authorize</span><span class="p">(</span><span class="s">'meowmeowmeow'</span><span class="p">)</span>
-</code></pre><pre class="highlight shell tab-shell"><code><span class="c"># With shell, you can just pass the correct header with each request</span>
-curl <span class="s2">"api_endpoint_here"</span>
-  -H <span class="s2">"Authorization: meowmeowmeow"</span>
-</code></pre><pre class="highlight javascript tab-javascript"><code><span class="kr">const</span> <span class="nx">kittn</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'kittn'</span><span class="p">);</span>
+<h2 id="access-api">Access API</h2>
 
-<span class="kd">let</span> <span class="nx">api</span> <span class="o">=</span> <span class="nx">kittn</span><span class="p">.</span><span class="nx">authorize</span><span class="p">(</span><span class="s1">'meowmeowmeow'</span><span class="p">);</span>
-</code></pre>
-<blockquote>
-<p>Make sure to replace <code class="prettyprint">meowmeowmeow</code> with your API key.</p>
-</blockquote>
+<p>The access API acts as the getter/setter of the database. It provides an extra layer of security as it can deny attacks on the database. For this project, the access API comes in the form of a php script. It will need host, port, username and password of the database. To set up the API, simply replace those information at the top of the file, then upload it to a server.</p>
 
-<p>Follow this guide to deploy our system.</p>
+<p>Custom security authorization logic should be added to this script to allow or deny database updating API calls. See the file for details on how to do so.</p>
+
+<h2 id="map">Map</h2>
+
+<p>The map is what library patrons see when they click on a button. We wrap the map in a javascript file and provide a sample HTML page. To set this up, the javascript file should be uploaded to the same directory of wherever the actual MAP button is in the library catalogs, and in that HTML page, this javascript file should be imported, and the <code class="prettyprint">displayMap(callno)</code> function should be called when the button is pressed.</p>
+
+<h2 id="map-editor">Map Editor</h2>
+
+<p>Once the server set up is complete, we need to create some library floor plans to actually use this system. Details of the map editor can be found in the accompanying repository <a href="https://github.com/stack-maps/map-editor">here</a>.</p>
 
 <h1 id="json-format">JSON Format</h1>
 
 <h2 id="library">library</h2>
-
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"library_id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"library_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Uris"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"floors"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
 <table><thead>
 <tr>
 <th>Name</th>
@@ -279,7 +277,16 @@ curl <span class="s2">"api_endpoint_here"</span>
 </tbody></table>
 
 <h2 id="floor">floor</h2>
-
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"floor_id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"floor_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Level 1"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"floor_order"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"walls"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+  </span><span class="s2">"aisle_areas"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+  </span><span class="s2">"landmarks"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+  </span><span class="s2">"library"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
 <table><thead>
 <tr>
 <th>Name</th>
@@ -323,7 +330,14 @@ curl <span class="s2">"api_endpoint_here"</span>
 <p>library refers to the library_id, which this floor belongs to..</p>
 
 <h2 id="wall">wall</h2>
-
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"start_x"</span><span class="p">:</span><span class="w"> </span><span class="mf">15.3</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"start_y"</span><span class="p">:</span><span class="w"> </span><span class="mf">16.8</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"end_x"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">30.6</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"end_y"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">33.6</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"floor"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
 <table><thead>
 <tr>
 <th>Name</th>
@@ -359,7 +373,15 @@ curl <span class="s2">"api_endpoint_here"</span>
 <p>floor refers to the floor_id, which this wall belongs to.</p>
 
 <h2 id="aisle_area">aisle_area</h2>
-
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"center_x"</span><span class="p">:</span><span class="w"> </span><span class="mf">15.3</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"center_y"</span><span class="p">:</span><span class="w"> </span><span class="mf">16.8</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"width"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">30.6</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"height"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">33.6</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"rotation"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mi">36</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"aisles"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
 <table><thead>
 <tr>
 <th>Name</th>
@@ -403,7 +425,16 @@ curl <span class="s2">"api_endpoint_here"</span>
 <p>floor refers to the floor_id, which this aisle_area belongs to.</p>
 
 <h2 id="aisle">aisle</h2>
-
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"center_x"</span><span class="p">:</span><span class="w"> </span><span class="mf">15.3</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"center_y"</span><span class="p">:</span><span class="w"> </span><span class="mf">16.8</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"length"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">30.6</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"width"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">33.6</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"rotation"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"sides"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"call-range"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
 <table><thead>
 <tr>
 <th>Name</th>
@@ -456,7 +487,13 @@ curl <span class="s2">"api_endpoint_here"</span>
 floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="call_range">call_range</h2>
-
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"collection"</span><span class="p">:</span><span class="w"> </span><span class="s2">"OVER"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"call_start"</span><span class="p">:</span><span class="w"> </span><span class="s2">"E"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"call_end"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="s2">"F"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"side"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
 <table><thead>
 <tr>
 <th>Name</th>
@@ -492,7 +529,15 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 <p>aisle refers to the aisle_id, which this call_range belongs to.</p>
 
 <h2 id="landmark">landmark</h2>
-
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"landmark_type"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"toilet"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"center_x"</span><span class="p">:</span><span class="w"> </span><span class="mf">15.3</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"center_y"</span><span class="p">:</span><span class="w"> </span><span class="mf">16.8</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"length"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">30.6</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"width"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">33.6</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"rotation"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
 <table><thead>
 <tr>
 <th>Name</th>
@@ -538,6 +583,8 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 <h1 id="api-functions">API Functions</h1>
 
 <p>The following are key functions provided by the API to allow interaction between the Map editor, Map generator and the database.</p>
+
+<p>They are called using POST and responses are formatted as a Json object specified above.</p>
 
 <h2 id="login">login</h2>
 
@@ -1375,69 +1422,8 @@ user_id: it is an INT, and it is the primary key of the users. It auto increment
 </tr>
 </tbody></table>
 
-          <h1 id="errors">Errors</h1>
-
-<aside class="notice">This error section is stored in a separate file in `includes/_errors.md`. Slate allows you to optionally separate out your docs into many files&hellip;just save them to the `includes` folder and add them to the top of your `index.md`&lsquo;s frontmatter. Files are included in the order listed.</aside>
-
-<p>The Kittn API uses the following error codes:</p>
-
-<table><thead>
-<tr>
-<th>Error Code</th>
-<th>Meaning</th>
-</tr>
-</thead><tbody>
-<tr>
-<td>400</td>
-<td>Bad Request &ndash; Your request sucks</td>
-</tr>
-<tr>
-<td>401</td>
-<td>Unauthorized &ndash; Your API key is wrong</td>
-</tr>
-<tr>
-<td>403</td>
-<td>Forbidden &ndash; The kitten requested is hidden for administrators only</td>
-</tr>
-<tr>
-<td>404</td>
-<td>Not Found &ndash; The specified kitten could not be found</td>
-</tr>
-<tr>
-<td>405</td>
-<td>Method Not Allowed &ndash; You tried to access a kitten with an invalid method</td>
-</tr>
-<tr>
-<td>406</td>
-<td>Not Acceptable &ndash; You requested a format that isn&rsquo;t json</td>
-</tr>
-<tr>
-<td>410</td>
-<td>Gone &ndash; The kitten requested has been removed from our servers</td>
-</tr>
-<tr>
-<td>418</td>
-<td>I&rsquo;m a teapot</td>
-</tr>
-<tr>
-<td>429</td>
-<td>Too Many Requests &ndash; You&rsquo;re requesting too many kittens! Slow down!</td>
-</tr>
-<tr>
-<td>500</td>
-<td>Internal Server Error &ndash; We had a problem with our server. Try again later.</td>
-</tr>
-<tr>
-<td>503</td>
-<td>Service Unavailable &ndash; We&rsquo;re temporarily offline for maintenance. Please try again later.</td>
-</tr>
-</tbody></table>
-
       </div>
       <div class="dark-box">
-          <div class="lang-selector">
-                <a href="#" data-language-name="php">php</a>
-          </div>
       </div>
     </div>
   </body>
