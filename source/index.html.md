@@ -157,7 +157,7 @@ Name | Type
   "length"  : 30.6,
   "width"  : 33.6,
   "rotation"  : 16,
-  "sides" : 2,
+  "is_double_sided" : true,
   "call-range": []
 }
 ```
