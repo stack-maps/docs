@@ -31,6 +31,14 @@ The system is now up and running! Access the `index.html` file to see how you wo
 
 # Architecture Overview
 
+## Call Numbers
+
+For this project, we use Library of Congress call number system, although it is not too hard to implement another type of call number system.
+
+The Library of Congress call number system dissects a call number into several parts. For our purposes, we only need to look at a number's first four parts, class, subclass, and two cutter numbers. For example, `CL 50.26 .G5 .C8` has class of `CL`, subclass of `50.26`, first cutter of `.G5` and second cutter of `.C8`. Sometimes it is written without spaces between them: `CL50.26.G5.C8`.
+
+A call number range can be far less specific, however. We can have a call range of `A 5 - A 20`, or even `B - C`. We allow partial call numbers in the system, but we must define exactly what the ordering is between them. First, we assume that if a call number has one part, then it must have the preceding part. For example, if a call number has a cutter, we assume it must also have a subclass (and subsequently the class as well). Second, if two call numbers, `A` and `B`, agree on every preceding part, but `A` has the next part where `B` does not, then `A > B`. Finally, we require that every call number in the system must contain at least a class. We reject empty call numbers.
+
 ## Database
 
 This project uses MySQL database. While any remote MySQL database can work, for security concerns it is the best to have the MySQL database and the access script on the same server, and disallow any remote access on the database.
@@ -190,7 +198,7 @@ Name | Type
 `side` | int
 `aisle` | int
 
-`aisle` refers to the `aisle_id`, which this `call_range` belongs to.
+`aisle` refers to the `aisle_id`, which this `call_range` belongs to. `call_start` and `call_end` must be valid partial call numbers, with at least the class letters.
 
 ## landmark
 
@@ -508,7 +516,7 @@ aisle_area | INT <br/> NOT NULL | It is a foreign key links to table aisle_areaâ
 Parameter       |  Data type  | Description
 ---------       |  ---------- | -----------
 call_range_id | INT <br/> NOT NULL | It is the primary key of the aisle. It auto increments each time when a new aisle has been inserted into the table
-collection | CHAR(50) <br/> NOT NULL | It indicates which collection that this call_range is under.
+collection | CHAR(50) <br/> NOT NULL | It indicates which collection that this call_range is under. Currently supporting *empty* (regular), `+` (oversized) and `++` (double oversized). 
 call_start | CHAR(50) <br/> NOT NULL | It indicates the lower bound of the call_range
 call_end | CHAR(50) <br/> NOT NULL | It indicates the upper bound of the call_range
 side | INT | It indicates which side on the aisle that the call_range belongs to
