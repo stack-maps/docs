@@ -157,7 +157,7 @@ Name | Type
   "length"  : 30.6,
   "width"  : 33.6,
   "rotation"  : 16,
-  "is_double_sided" : true,
+  "is_double_sided" : 1,
   "call-range": []
 }
 ```
@@ -170,13 +170,14 @@ Name | Type
 `width` | float
 `height` | float
 `rotation` | float
-`is_double_sided` | boolean
+`is_double_sided` | int
 `call_ranges` | array of [call_range](#call_range) objects
 `aisle_area` | int
 `floor` | int
 
 `aisle_area` refers to the `aisle_area_id`, which this aisle belongs to.
 `floor` refers to the floor_id, which this aisle belongs to.
+`is_double_sided` is an int with values 0 and 1, effectively a boolean.
 
 ## call_range
 
