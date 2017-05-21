@@ -196,7 +196,7 @@ Name | Type
 
 ```json
 {
-  "landmark_type" : "toilet",
+  "landmark_type" : "Stairs",
   "center_x": 15.3,
   "center_y": 16.8,
   "length"  : 30.6,
@@ -216,7 +216,7 @@ Name | Type
 `rotation` | float
 `floor` | int
 
-`floor` refers to the `floor_id`, which this `landmark` belongs to.
+`floor` refers to the `floor_id`, which this `landmark` belongs to. `landmark_type` can take on the values `Stairs`, `Restroom` and `Elevator`.
 
 # API Functions
 
