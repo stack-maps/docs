@@ -27,9 +27,32 @@ This is the documentation for Stack Maps, a project aimed at reducing time spent
 4. Locate `api.php` file inside the repository. Replace lines 9-13 with your database information. Upload `api.php` file on your server, preferrably on the same server as your database.
 5. Locate `displaymap.js` file inside the repository. Replace line 141 with your 'api.php' file path. This can be an absolute path, relative path or an internet address. Upload `displaymap.js` and `index.html` files on your server in the same folder.
 
-The system is now up and running! Access the `index.html` file to see how you would integrate the system into your `library` catalog page. Download the newest release from [stack-maps/map-editor](https://github.com/stack-maps/map-editor) to start populating your library, or write your own following this API.
+The system is now up and running! Access the `index.html` file to see how you would integrate the system into your library catalog page. Download the newest release from [stack-maps/map-editor](https://github.com/stack-maps/map-editor) to start populating your library, or write your own following this API.
 
 # Architecture Overview
+
+The system uses a three-tiered architecture, with MySQL as database, php script as API for the database, and Javascript for displaying the map to users. Ideally, API and database are bundled together on one server, and the map displaying script is embedded into library catalog page.
+
+## Database
+
+This project uses MySQL database. While any remote MySQL database can work, for security concerns it is the best to have the MySQL database and the access script on the same server, and disallow any remote access on the database. The file `db-setup.sql` contains all necessary MySQL commands to setup a working database for the system.
+
+## Access API
+
+The access API acts as the getter/setter of the database. It provides an extra layer of security as it can deny attacks on the database. For this project, the access API comes in the form of a php script. It will need host, port, username and password of the database. To set up the API, simply replace those information at the top of the file, then upload it to a server.
+
+By default, anyone with the API's address is able to edit the library floor plans by logging in with the default usernameand password. Custom security authorization logic should be added to this script to allow or deny database updating API calls. Specifically, in the function `login()` the username and password sent by the library maintenance staff should be forwarded to a third-party authorization server, such as a university network authentication service. `login()` should then pass on the result back to the user in the correct format, described in the API section below.
+
+All API functions use prepared MySQL statements and care has been taken to prevent SQL injection attacks.
+
+## Map
+
+The map is what library patrons see when they want to see the location of a book they are searching for. Map is a Javascript file that has a single function to display the map (not counting helpers). It requires the address of the API hardcoded into the file before deployment (see [Deployment](#Deployment)). You will find a simple example of an HTML page utilizing the map in the repo.
+
+## Map Editor
+
+The map editor is a separate part of this project aimed to provide an easy method to create and maintain library information.
+Once the server set up is complete. It should be noted that the editor also interact with the database via the API. Therefore the editor can be entirely separated out from the server design. For the official map editor, refer to [this repository](https://github.com/stack-maps/map-editor).
 
 ## Call Numbers
 
@@ -39,22 +62,9 @@ The Library of Congress call number system dissects a call number into several p
 
 A call number range can be far less specific, however. We can have a call range of `A 5 - A 20`, or even `B - C`. We allow partial call numbers in the system, but we must define exactly what the ordering is between them. First, we assume that if a call number has one part, then it must have the preceding part. For example, if a call number has a cutter, we assume it must also have a subclass (and subsequently the class as well). Second, if two call numbers, `A` and `B`, agree on every preceding part, but `A` has the next part where `B` does not, then `A > B`. Finally, we require that every call number in the system must contain at least a class. We reject empty call numbers.
 
-## Database
-
-This project uses MySQL database. While any remote MySQL database can work, for security concerns it is the best to have the MySQL database and the access script on the same server, and disallow any remote access on the database.
-
-## Access API
-The access API acts as the getter/setter of the database. It provides an extra layer of security as it can deny attacks on the database. For this project, the access API comes in the form of a php script. It will need host, port, username and password of the database. To set up the API, simply replace those information at the top of the file, then upload it to a server.
-
-Custom security authorization logic should be added to this script to allow or deny database updating API calls. See the file for details on how to do so.
-
-## Map
-The map is what `library` patrons see when they click on a button. We wrap the map in a javascript file and provide a sample HTML page. To set this up, the javascript file should be uploaded to the same directory of wherever the actual MAP button is in the `library` catalogs, and in that HTML page, this javascript file should be imported, and the `displayMap(callno)` function should be called when the button is pressed.
-
-## Map Editor
-Once the server set up is complete, we need to create some library floor plans to actually use this system. While inputing [here](https://github.com/stack-maps/map-editor).
-
 # JSON Format
+
+This is the format of data sent to and received from the API script. No encryption is used between the transportation. It is advised to host the database and API on a serverwith HTTPS SSL certificate to prevent middleman attacks.
 
 ## library
 
