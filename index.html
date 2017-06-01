@@ -216,7 +216,6 @@
       <div id="toc">
       </div>
         <ul class="toc-footer">
-            <li><a href='#'>Sign Up for a Developer Key</a></li>
             <li><a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a></li>
         </ul>
     </div>
@@ -225,29 +224,66 @@
       <div class="content">
         <h1 id="introduction">Introduction</h1>
 
-<p>A PHP file is used for API Connection, which is fundamentally a glue to link all our components together: Map generator, Map editor, and database. Because of the API Connection, administrators are able to save the changes that they made to the library to our database, and users are able to find the location of their book based information in our database.</p>
+<p>This is the documentation for Stack Maps, a project aimed at reducing time spent at find a book in a library. This documentation is designed for people maintaining the system. It describes the overall system architecture, database design, exposed API, and data transport formats.</p>
 
-<h1 id="deployment-instructions">Deployment instructions</h1>
+<p><a href="https://github.com/stack-maps/server">stack-maps/server</a>
+<a href="https://github.com/stack-maps/map-editor">stack-maps/map-editor</a></p>
+
+<h1 id="requirements">Requirements</h1>
+
+<ul>
+<li>A server that supports php 7.0.</li>
+<li>MySQL database.</li>
+</ul>
+
+<h1 id="deployment">Deployment</h1>
+
+<ol>
+<li>Fork the server repository.</li>
+<li>Clone the forked repository to local disk.</li>
+<li>Locate <code class="prettyprint">db-setup.sql</code> file inside the repository. In your MySQL database, run <code class="prettyprint">db-setup.sql</code>. This will create all tables necessary for the system. By default the script does not create a new database. You can change this by uncommenting lines 20-21 in <code class="prettyprint">db-setup.sql</code>.</li>
+<li>Locate <code class="prettyprint">api.php</code> file inside the repository. Replace lines 9-13 with your database information. Upload <code class="prettyprint">api.php</code> file on your server, preferrably on the same server as your database.</li>
+<li>Locate <code class="prettyprint">displaymap.js</code> file inside the repository. Replace line 141 with your &lsquo;api.php&rsquo; file path. This can be an absolute path, relative path or an internet address. Upload <code class="prettyprint">displaymap.js</code> and <code class="prettyprint">index.html</code> files on your server in the same folder.</li>
+</ol>
+
+<p>The system is now up and running! Access the <code class="prettyprint">index.html</code> file to see how you would integrate the system into your library catalog page. Download the newest release from <a href="https://github.com/stack-maps/map-editor">stack-maps/map-editor</a> to start populating your library, or write your own following this API.</p>
+
+<h1 id="architecture-overview">Architecture Overview</h1>
+
+<p>The system uses a three-tiered architecture, with MySQL as database, php script as API for the database, and Javascript for displaying the map to users. Ideally, API and database are bundled together on one server, and the map displaying script is embedded into library catalog page.</p>
 
 <h2 id="database">Database</h2>
 
-<p>This project uses MySQL database. While any remote MySQL database can work, for security concerns it is the best to have the MySQL database and the access script on the same server, and disallow any remote access on the database.</p>
+<p>This project uses MySQL database. While any remote MySQL database can work, for security concerns it is the best to have the MySQL database and the access script on the same server, and disallow any remote access on the database. The file <code class="prettyprint">db-setup.sql</code> contains all necessary MySQL commands to setup a working database for the system.</p>
 
 <h2 id="access-api">Access API</h2>
 
 <p>The access API acts as the getter/setter of the database. It provides an extra layer of security as it can deny attacks on the database. For this project, the access API comes in the form of a php script. It will need host, port, username and password of the database. To set up the API, simply replace those information at the top of the file, then upload it to a server.</p>
 
-<p>Custom security authorization logic should be added to this script to allow or deny database updating API calls. See the file for details on how to do so.</p>
+<p>By default, anyone with the API&rsquo;s address is able to edit the library floor plans by logging in with the default usernameand password. Custom security authorization logic should be added to this script to allow or deny database updating API calls. Specifically, in the function <code class="prettyprint">login()</code> the username and password sent by the library maintenance staff should be forwarded to a third-party authorization server, such as a university network authentication service. <code class="prettyprint">login()</code> should then pass on the result back to the user in the correct format, described in the API section below.</p>
+
+<p>All API functions use prepared MySQL statements and care has been taken to prevent SQL injection attacks.</p>
 
 <h2 id="map">Map</h2>
 
-<p>The map is what library patrons see when they click on a button. We wrap the map in a javascript file and provide a sample HTML page. To set this up, the javascript file should be uploaded to the same directory of wherever the actual MAP button is in the library catalogs, and in that HTML page, this javascript file should be imported, and the <code class="prettyprint">displayMap(callno)</code> function should be called when the button is pressed.</p>
+<p>The map is what library patrons see when they want to see the location of a book they are searching for. Map is a Javascript file that has a single function to display the map (not counting helpers). It requires the address of the API hardcoded into the file before deployment (see <a href="#Deployment">Deployment</a>). You will find a simple example of an HTML page utilizing the map in the repo.</p>
 
 <h2 id="map-editor">Map Editor</h2>
 
-<p>Once the server set up is complete, we need to create some library floor plans to actually use this system. Details of the map editor can be found in the accompanying repository <a href="https://github.com/stack-maps/map-editor">here</a>.</p>
+<p>The map editor is a separate part of this project aimed to provide an easy method to create and maintain library information.
+Once the server set up is complete. It should be noted that the editor also interact with the database via the API. Therefore the editor can be entirely separated out from the server design. For the official map editor, refer to <a href="https://github.com/stack-maps/map-editor">this repository</a>.</p>
+
+<h2 id="call-numbers">Call Numbers</h2>
+
+<p>For this project, we use Library of Congress call number system, although it is not too hard to implement another type of call number system.</p>
+
+<p>The Library of Congress call number system dissects a call number into several parts. For our purposes, we only need to look at a number&rsquo;s first four parts, class, subclass, and two cutter numbers. For example, <code class="prettyprint">CL 50.26 .G5 .C8</code> has class of <code class="prettyprint">CL</code>, subclass of <code class="prettyprint">50.26</code>, first cutter of <code class="prettyprint">.G5</code> and second cutter of <code class="prettyprint">.C8</code>. Sometimes it is written without spaces between them: <code class="prettyprint">CL50.26.G5.C8</code>.</p>
+
+<p>A call number range can be far less specific, however. We can have a call range of <code class="prettyprint">A 5 - A 20</code>, or even <code class="prettyprint">B - C</code>. We allow partial call numbers in the system, but we must define exactly what the ordering is between them. First, we assume that if a call number has one part, then it must have the preceding part. For example, if a call number has a cutter, we assume it must also have a subclass (and subsequently the class as well). Second, if two call numbers, <code class="prettyprint">A</code> and <code class="prettyprint">B</code>, agree on every preceding part, but <code class="prettyprint">A</code> has the next part where <code class="prettyprint">B</code> does not, then <code class="prettyprint">A &gt; B</code>. Finally, we require that every call number in the system must contain at least a class. We reject empty call numbers.</p>
 
 <h1 id="json-format">JSON Format</h1>
+
+<p>This is the format of data sent to and received from the API script. No encryption is used between the transportation. It is advised to host the database and API on a serverwith HTTPS SSL certificate to prevent middleman attacks.</p>
 
 <h2 id="library">library</h2>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
@@ -327,7 +363,7 @@
 </tr>
 </tbody></table>
 
-<p>library refers to the library_id, which this floor belongs to..</p>
+<p><code class="prettyprint">library</code> refers to the library_id, which this <code class="prettyprint">floor</code> belongs to..</p>
 
 <h2 id="wall">wall</h2>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
@@ -370,7 +406,7 @@
 </tr>
 </tbody></table>
 
-<p>floor refers to the floor_id, which this wall belongs to.</p>
+<p><code class="prettyprint">floor</code> refers to the floor_id, which this wall belongs to.</p>
 
 <h2 id="aisle_area">aisle_area</h2>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
@@ -422,7 +458,7 @@
 </tr>
 </tbody></table>
 
-<p>floor refers to the floor_id, which this aisle_area belongs to.</p>
+<p><code class="prettyprint">floor</code> refers to the <code class="prettyprint">floor_id</code>, which this <code class="prettyprint">aisle_area</code> belongs to.</p>
 
 <h2 id="aisle">aisle</h2>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
@@ -431,7 +467,7 @@
   </span><span class="s2">"length"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">30.6</span><span class="p">,</span><span class="w">
   </span><span class="s2">"width"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">33.6</span><span class="p">,</span><span class="w">
   </span><span class="s2">"rotation"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w">
-  </span><span class="s2">"sides"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"is_double_sided"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
   </span><span class="s2">"call-range"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre>
@@ -467,7 +503,7 @@
 </tr>
 <tr>
 <td><code class="prettyprint">is_double_sided</code></td>
-<td>boolean</td>
+<td>int</td>
 </tr>
 <tr>
 <td><code class="prettyprint">call_ranges</code></td>
@@ -483,8 +519,9 @@
 </tr>
 </tbody></table>
 
-<p>aisle_area refers to the aisle_area_id, which this aisle belongs to.
-floor refers to the floor_id, which this aisle belongs to.</p>
+<p><code class="prettyprint">aisle_area</code> refers to the <code class="prettyprint">aisle_area_id</code>, which this aisle belongs to.
+<code class="prettyprint">floor</code> refers to the floor_id, which this aisle belongs to.
+<code class="prettyprint">is_double_sided</code> is an int with values 0 and 1, effectively a boolean.</p>
 
 <h2 id="call_range">call_range</h2>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
@@ -526,11 +563,11 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 </tbody></table>
 
-<p>aisle refers to the aisle_id, which this call_range belongs to.</p>
+<p><code class="prettyprint">aisle</code> refers to the <code class="prettyprint">aisle_id</code>, which this <code class="prettyprint">call_range</code> belongs to. <code class="prettyprint">call_start</code> and <code class="prettyprint">call_end</code> must be valid partial call numbers, with at least the class letters.</p>
 
 <h2 id="landmark">landmark</h2>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
-  </span><span class="s2">"landmark_type"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"toilet"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"landmark_type"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Stairs"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"center_x"</span><span class="p">:</span><span class="w"> </span><span class="mf">15.3</span><span class="p">,</span><span class="w">
   </span><span class="s2">"center_y"</span><span class="p">:</span><span class="w"> </span><span class="mf">16.8</span><span class="p">,</span><span class="w">
   </span><span class="s2">"length"</span><span class="w">  </span><span class="p">:</span><span class="w"> </span><span class="mf">30.6</span><span class="p">,</span><span class="w">
@@ -578,7 +615,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 </tbody></table>
 
-<p>floor refers to the floor_id, which this landmark belongs to.</p>
+<p><code class="prettyprint">floor</code> refers to the <code class="prettyprint">floor_id</code>, which this <code class="prettyprint">landmark</code> belongs to. <code class="prettyprint">landmark_type</code> can take on the values <code class="prettyprint">Stairs</code>, <code class="prettyprint">Restroom</code> and <code class="prettyprint">Elevator</code>.</p>
 
 <h1 id="api-functions">API Functions</h1>
 
@@ -634,7 +671,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="create_library">create_library</h2>
 
-<p>This creates a library in the database and returns a success flag along with the created library id.</p>
+<p>This creates a <code class="prettyprint">library</code> in the database and returns a success flag along with the created <code class="prettyprint">library</code> id.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -672,13 +709,13 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">id</code></td>
-<td>The library_id of the newly created Library record in the database.</td>
+<td>The library_id of the newly created <code class="prettyprint">library</code> record in the database.</td>
 </tr>
 </tbody></table>
 
 <h2 id="create_floor">create_floor</h2>
 
-<p>This creates a floor in the database and returns a success flag along with the created floor id. The newly created floor is empty.</p>
+<p>This creates a <code class="prettyprint">floor</code> in the database and returns a success flag along with the created <code class="prettyprint">floor</code> id. The newly created <code class="prettyprint">floor</code> is empty.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -702,7 +739,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">library_id</code></td>
-<td>Id of the library in which the floor will be created in.</td>
+<td>Id of the <code class="prettyprint">library</code> in which the <code class="prettyprint">floor</code> will be created in.</td>
 </tr>
 </tbody></table>
 
@@ -724,13 +761,13 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">id</code></td>
-<td>The floor_id of the newly created Floor record in the database.</td>
+<td>The <code class="prettyprint">floor_id</code> of the newly created <code class="prettyprint">floor</code> record in the database.</td>
 </tr>
 </tbody></table>
 
 <h2 id="get_library_list">get_library_list</h2>
 
-<p>This fetches the current list of libraries from the database. Note that no floor information is returned. Details of specific floor plans within a library can be retrieved via get_library().</p>
+<p>This fetches the current list of libraries from the database. Note that no <code class="prettyprint">floor</code> information is returned. Details of specific <code class="prettyprint">floor</code> plans within a <code class="prettyprint">library</code> can be retrieved via <code class="prettyprint">get_library()</code>.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -760,7 +797,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="get_library">get_library</h2>
 
-<p>This fetches all information from a library, including details on its floors&rsquo; geometry and aisle data.</p>
+<p>This fetches all information from a <code class="prettyprint">library</code>, including details on its floors&rsquo; geometry and aisle data.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -772,7 +809,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </thead><tbody>
 <tr>
 <td><code class="prettyprint">library_id</code></td>
-<td>ID of the library to fetch information on.</td>
+<td>ID of the <code class="prettyprint">library</code> to fetch information on.</td>
 </tr>
 </tbody></table>
 
@@ -793,14 +830,14 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 <td>The error message, if not successful.</td>
 </tr>
 <tr>
-<td><code class="prettyprint">id</code></td>
-<td>A Library object. Refer to the JSON data format for more information.</td>
+<td><code class="prettyprint">data</code></td>
+<td>A <code class="prettyprint">library</code> object. Refer to the JSON data format for more information.</td>
 </tr>
 </tbody></table>
 
 <h2 id="get_book_location">get_book_location</h2>
 
-<p>This takes a book&rsquo;s call number and its located library and tries to locate the exact aisle containing the book. It also provides the floor plan data for that floor so a map can be drawn from it.</p>
+<p>This takes a book&rsquo;s call number and its located <code class="prettyprint">library</code> and tries to locate the exact aisle containing the book. It also provides the <code class="prettyprint">floor</code> plan data for that <code class="prettyprint">floor</code> so a map can be drawn from it.</p>
 
 <p>If multiple floors appear to contain the same book&rsquo;s call number, multiple floors will be returned. It is up to the caller to decide on what to do with the data.</p>
 
@@ -816,7 +853,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </thead><tbody>
 <tr>
 <td><code class="prettyprint">library_name</code></td>
-<td>Name of the library to find the book from.</td>
+<td>Name of the <code class="prettyprint">library</code> to find the book from.</td>
 </tr>
 <tr>
 <td><code class="prettyprint">call_number</code></td>
@@ -842,17 +879,17 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">floors</code></td>
-<td>A numeric array of Floor object. Refer to the JSON data format for more information.</td>
+<td>A numeric array of <code class="prettyprint">floor</code> object. Refer to the JSON data format for more information.</td>
 </tr>
 <tr>
 <td><code class="prettyprint">aisles</code></td>
-<td>A numeric array of associative arrays each containing two elements, an &lsquo;aisle_id&rsquo; and a &lsquo;side&rsquo;. The former is the id of the aisle containing the given call number. The latter is present only if the aisle is double sided, in which case &lsquo;side&rsquo; identifies which side the book is on. 0 indicates the book is on the left, 1 indicates the book is on the right. Left and right are relative to the local space of the stack (where we disregard its rotation). At 0 rotation, a double sided aisle should have short width and long height, with two rectangles: one on the left and the other on the right.</td>
+<td>A numeric array of associative arrays each containing two elements, an &lsquo;aisle_id&rsquo; and a &lsquo;side&rsquo;. The former is the id of the aisle containing the given call number. The latter is present only if the aisle is double sided, in which case &lsquo;side&rsquo; identifies which side the book is on. 0 indicates the book is on the left, 1 indicates the book is on the right. Left and right are relative to the local space of the stack (where we disregard its rotation). At 0 rotation, a double sided aisle should have short <code class="prettyprint">width</code> and long height, with two rectangles: one on the left and the other on the right.</td>
 </tr>
 </tbody></table>
 
 <h2 id="update_library">update_library</h2>
 
-<p>This updates a library&rsquo;s name. Note each library must have a unique name.</p>
+<p>This updates a <code class="prettyprint">library</code>&lsquo;s name. Note each <code class="prettyprint">library</code> must have a unique name.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -868,7 +905,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">library_id</code></td>
-<td>Id of the library to perform the change to.</td>
+<td>Id of the <code class="prettyprint">library</code> to perform the change to.</td>
 </tr>
 <tr>
 <td><code class="prettyprint">library_name</code></td>
@@ -896,7 +933,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="update_floor">update_floor</h2>
 
-<p>This updates a floor of a library. The floor includes aisles, call number ranges in aisles, aisle areas, aisles in aisle areas, call number ranges in aisles in aisle areas, landmarks, and walls.</p>
+<p>This updates a <code class="prettyprint">floor</code> of a library. The <code class="prettyprint">floor</code> includes aisles, call number ranges in aisles, aisle areas, aisles in aisle areas, call number ranges in aisles in aisle areas, landmarks, and walls.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -912,7 +949,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">floor</code></td>
-<td>Floor object encoded in JSON. Refer to the JSON data format for more information.</td>
+<td><code class="prettyprint">floor</code> object encoded in JSON. Refer to the JSON data format for more information.</td>
 </tr>
 </tbody></table>
 
@@ -936,7 +973,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="update_floor_meta">update_floor_meta</h2>
 
-<p>This updates a floor&rsquo;s name and floor order within a library.</p>
+<p>This updates a <code class="prettyprint">floor</code>&rsquo;s name and <code class="prettyprint">floor</code> order within a library.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -952,7 +989,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">floor_id</code></td>
-<td>Id of the floor to perform the change to.</td>
+<td>Id of the <code class="prettyprint">floor</code> to perform the change to.</td>
 </tr>
 <tr>
 <td><code class="prettyprint">floor_name</code></td>
@@ -984,7 +1021,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="delete_library">delete_library</h2>
 
-<p>This deletes a library and all floors associated with it. Deletions are not recoverable.</p>
+<p>This deletes a <code class="prettyprint">library</code> and all floors associated with it. Deletions are not recoverable.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -1000,7 +1037,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">library_id</code></td>
-<td>Id of the library to delete.</td>
+<td>Id of the <code class="prettyprint">library</code> to delete.</td>
 </tr>
 </tbody></table>
 
@@ -1024,7 +1061,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="delete_floor">delete_floor</h2>
 
-<p>This deletes a floor and all objects inside it. Deletions are not recoverable.</p>
+<p>This deletes a <code class="prettyprint">floor</code> and all objects inside it. Deletions are not recoverable.</p>
 
 <h3 id="post-parameters">POST Parameters</h3>
 
@@ -1040,7 +1077,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 <tr>
 <td><code class="prettyprint">floor_id</code></td>
-<td>Id of the floor to delete.</td>
+<td>Id of the <code class="prettyprint">floor</code> to delete.</td>
 </tr>
 </tbody></table>
 
@@ -1066,7 +1103,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="library">library</h2>
 
-<p><strong>Description:</strong> This table saves information of each library that needs to be managed, and we can relate floors, stacks, books, etc. in the library</p>
+<p><strong>Description:</strong> This table saves information of each <code class="prettyprint">library</code> that needs to be managed, and we can relate floors, stacks, books, etc. in the library</p>
 
 <table><thead>
 <tr>
@@ -1078,18 +1115,18 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 <tr>
 <td><code class="prettyprint">library_id</code></td>
 <td>INT <br/> NOT NULL</td>
-<td>It is the primary key of the library, and it auto increments each time when a new library has been inserted into the table. It will be referred by table floor so that each floor knows which library it belongs to.</td>
+<td>It is the primary key of the library, and it auto increments each time when a new <code class="prettyprint">library</code> has been inserted into the table. It will be referred by table <code class="prettyprint">floor</code> so that each <code class="prettyprint">floor</code> knows which <code class="prettyprint">library</code> it belongs to.</td>
 </tr>
 <tr>
 <td><code class="prettyprint">library_name</code></td>
 <td>CHAR(25) <br/> UNIQUE</td>
-<td>It indicates the name of the library. Since it is not intuitive for administrator or the users to use id, we gives each library a name, so it is easier to manage, display and manipulate.</td>
+<td>It indicates the name of the library. Since it is not intuitive for administrator or the users to use id, we gives each <code class="prettyprint">library</code> a name, so it is easier to manage, display and manipulate.</td>
 </tr>
 </tbody></table>
 
 <h2 id="floor">floor</h2>
 
-<p><strong>Description:</strong> This table saves the information for each floor, and each floor belongs to one and only one library. The floor has necessary information for generating maps and managing its relation with corresponding library.</p>
+<p><strong>Description:</strong> This table saves the information for each floor, and each <code class="prettyprint">floor</code> belongs to one and only one library. The <code class="prettyprint">floor</code> has necessary information for generating maps and managing its relation with corresponding library.</p>
 
 <table><thead>
 <tr>
@@ -1099,24 +1136,24 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 </thead><tbody>
 <tr>
-<td>floor_id</td>
+<td><code class="prettyprint">floor_id</code></td>
 <td>INT <br/> NOT NULL</td>
-<td>It is the primary key of the floor, and it auto increments each time when a new floor has been inserted into the table. It will be referred by table wall, aisle_area, aisle, landmark to know which floor they belong to.</td>
+<td>It is the primary key of the floor, and it auto increments each time when a new <code class="prettyprint">floor</code> has been inserted into the table. It will be referred by table wall, aisle_area, aisle, landmark to know which <code class="prettyprint">floor</code> they belong to.</td>
 </tr>
 <tr>
-<td>floor_name</td>
+<td><code class="prettyprint">floor_name</code></td>
 <td>CHAR(25)</td>
-<td>It indicates the name of the floor. Since it is not intuitive for administrator or the users to use id, we gives each floor a name, so it is easier to manage, display and manipulate</td>
+<td>It indicates the name of the floor. Since it is not intuitive for administrator or the users to use id, we gives each <code class="prettyprint">floor</code> a name, so it is easier to manage, display and manipulate</td>
 </tr>
 <tr>
 <td>floor_order</td>
 <td>FLOAT <br/> NOT NULL</td>
-<td>It indicates the order of the floor in its corresponding library, so that we know which floor is above others and which floor is beneath others by comparing their floor_order. When display in may, the floor_order can be shown to user, so that users know where the floor locates in the library.</td>
+<td>It indicates the order of the <code class="prettyprint">floor</code> in its corresponding library, so that we know which <code class="prettyprint">floor</code> is above others and which <code class="prettyprint">floor</code> is beneath others by comparing their floor_order. When display in may, the floor_order can be shown to user, so that users know where the <code class="prettyprint">floor</code> locates in the library.</td>
 </tr>
 <tr>
-<td>library</td>
+<td><code class="prettyprint">library</code></td>
 <td>INT <br/> NOT NULL</td>
-<td>It is a foreign key links to table library’s library_id, and it helps to identify which library the wall belongs to.</td>
+<td>It is a foreign key links to table library’s library_id, and it helps to identify which <code class="prettyprint">library</code> the wall belongs to.</td>
 </tr>
 </tbody></table>
 
@@ -1132,40 +1169,40 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 </thead><tbody>
 <tr>
-<td>wall_id</td>
+<td><code class="prettyprint">wall_id</code></td>
 <td>INT <br/> NOT NULL</td>
 <td>It is the primary key of the wall, and it auto increments each time when a new wall has been inserted into the table. Even though it does not have any other use for the user, but it is a good convention to assign each wall an unique id.</td>
 </tr>
 <tr>
-<td>start_x</td>
+<td><code class="prettyprint">start_x</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the x-axis coordinate of where the wall starts.</td>
 </tr>
 <tr>
-<td>start_y</td>
+<td><code class="prettyprint">start_y</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the y-axis coordinate of where the wall starts.</td>
 </tr>
 <tr>
-<td>end_x</td>
+<td><code class="prettyprint">end_x</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the x-axis coordinate of where the wall ends.</td>
 </tr>
 <tr>
-<td>end_y</td>
+<td><code class="prettyprint">end_y</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the y-axis coordinate of where the wall ends.</td>
 </tr>
 <tr>
-<td>floor</td>
+<td><code class="prettyprint">floor</code></td>
 <td>INT</td>
-<td>It is a foreign key links to table floor’s floor_id, and it helps to identify which floor the wall belongs to.</td>
+<td>It is a foreign key links to table floor’s floor_id, and it helps to identify which <code class="prettyprint">floor</code> the wall belongs to.</td>
 </tr>
 </tbody></table>
 
 <h2 id="aisle_area">aisle_area</h2>
 
-<p><strong>Description:</strong> This table saves information of aisle area, where aisle area is an area in a floor that can hold several aisles.</p>
+<p><strong>Description:</strong> This table saves information of aisle area, where aisle area is an area in a <code class="prettyprint">floor</code> that can hold several aisles.</p>
 
 <table><thead>
 <tr>
@@ -1175,39 +1212,39 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 </thead><tbody>
 <tr>
-<td>aisle_area_id</td>
+<td><code class="prettyprint">aisle_area_id</code></td>
 <td>INT <br/> NOT NULL</td>
-<td>It is the primary key of the aisle_area, and it auto increments each time when a new aisle_area has been inserted into the table. It can also be referenced by table aisle, so that each aisle knows which aisle_area it belongs to.</td>
+<td>It is the primary key of the aisle_area, and it auto increments each time when a new <code class="prettyprint">aisle_area</code> has been inserted into the table. It can also be referenced by table aisle, so that each aisle knows which <code class="prettyprint">aisle_area</code> it belongs to.</td>
 </tr>
 <tr>
-<td>center_x</td>
+<td><code class="prettyprint">center_x</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the x-axis coordinate of the center of aisle_area.</td>
 </tr>
 <tr>
-<td>center_y</td>
+<td><code class="prettyprint">center_y</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the y-axis coordinate of the center of aisle_area.</td>
 </tr>
 <tr>
-<td>width</td>
+<td><code class="prettyprint">width</code></td>
 <td>FLOAT <br/> NOT NULL</td>
-<td>It indicates the width of aisle_area</td>
+<td>It indicates the <code class="prettyprint">width</code> of aisle_area</td>
 </tr>
 <tr>
-<td>height</td>
+<td><code class="prettyprint">height</code></td>
 <td>FLOAT <br/> NOT NULL</td>
-<td>It indicates the height of aisle_area</td>
+<td>It indicates the <code class="prettyprint">height</code> of aisle_area</td>
 </tr>
 <tr>
-<td>rotation</td>
+<td><code class="prettyprint">rotation</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates angle that the aisle_area tilts relate to the floor</td>
 </tr>
 <tr>
-<td>floor</td>
+<td><code class="prettyprint">floor</code></td>
 <td>INT</td>
-<td>It is a foreign key links to table floor’s floor_id, and it helps to identify which floor the aisle_area belongs to.</td>
+<td>It is a foreign key links to table floor’s floor_id, and it helps to identify which <code class="prettyprint">floor</code> the aisle_area belongs to.</td>
 </tr>
 </tbody></table>
 
@@ -1223,32 +1260,32 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 </thead><tbody>
 <tr>
-<td>aisle_id</td>
+<td><code class="prettyprint">aisle_id</code></td>
 <td>INT <br/> NOT NULL</td>
 <td>It is the primary key of the aisle. It auto increments each time when a new aisle has been inserted into the table. It can also be referenced by table call_range, so that each call_range knows which aisle it belongs to.</td>
 </tr>
 <tr>
-<td>center_x</td>
+<td><code class="prettyprint">center_x</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the x-axis coordinate of the center of aisle.</td>
 </tr>
 <tr>
-<td>center_y</td>
+<td><code class="prettyprint">center_y</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the y-axis coordinate of the center of aisle.</td>
 </tr>
 <tr>
-<td>width</td>
+<td><code class="prettyprint">width</code></td>
 <td>FLOAT <br/> NOT NULL</td>
-<td>It indicates the width of aisle</td>
+<td>It indicates the <code class="prettyprint">width</code> of aisle</td>
 </tr>
 <tr>
-<td>height</td>
+<td><code class="prettyprint">height</code></td>
 <td>FLOAT <br/> NOT NULL</td>
-<td>It indicates the height of aisle</td>
+<td>It indicates the <code class="prettyprint">height</code> of aisle</td>
 </tr>
 <tr>
-<td>rotation</td>
+<td><code class="prettyprint">rotation</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates angle that the aisle tilts relate to the floor</td>
 </tr>
@@ -1263,9 +1300,9 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 <td>It is a foreign key links to table aisle_area’s aisle_area_id, so that the aisle knows which aisle_area it belongs to</td>
 </tr>
 <tr>
-<td>floor</td>
+<td><code class="prettyprint">floor</code></td>
 <td>INT</td>
-<td>It is a foreign key links to table floor’s floor_id, and it helps to identify which floor the aisle belongs to.</td>
+<td>It is a foreign key links to table floor’s floor_id, and it helps to identify which <code class="prettyprint">floor</code> the aisle belongs to.</td>
 </tr>
 </tbody></table>
 
@@ -1288,7 +1325,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 <tr>
 <td>collection</td>
 <td>CHAR(50) <br/> NOT NULL</td>
-<td>It indicates which collection that this call_range is under.</td>
+<td>It indicates which collection that this call_range is under. Currently supporting <em>empty</em> (regular), <code class="prettyprint">+</code> (oversized) and <code class="prettyprint">++</code> (double oversized).</td>
 </tr>
 <tr>
 <td>call_start</td>
@@ -1314,7 +1351,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 
 <h2 id="landmark">landmark</h2>
 
-<p><strong>Description:</strong> This table saves information of landmarks, which can be any non-aisle and non-aisle area objects on the floor that are important to note, and they can be toilets, elevators, etc.</p>
+<p><strong>Description:</strong> This table saves information of landmarks, which can be any non-aisle and non-aisle area objects on the <code class="prettyprint">floor</code> that are important to note, and they can be toilets, elevators, etc.</p>
 
 <table><thead>
 <tr>
@@ -1324,44 +1361,44 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 </thead><tbody>
 <tr>
-<td>landmark_id</td>
+<td><code class="prettyprint">landmark_id</code></td>
 <td>INT <br/> NOT NULL</td>
 <td>It is the primary key of the landmark. It auto increments each time when a new landmark has been inserted into the table</td>
 </tr>
 <tr>
-<td>landmark_type</td>
+<td><code class="prettyprint">landmark_type</code></td>
 <td>CHAR(25) <br/> NOT NULL</td>
 <td>It indicates what the landmark is. Currently our options includes elevators, toilets, stairs, and we can for sure have more if there is demand in the future.</td>
 </tr>
 <tr>
-<td>center_x</td>
+<td><code class="prettyprint">center_x</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the x-axis coordinate of the center of landmark.</td>
 </tr>
 <tr>
-<td>center_y</td>
+<td><code class="prettyprint">center_y</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates the y-axis coordinate of the center of landmark.</td>
 </tr>
 <tr>
-<td>width</td>
+<td><code class="prettyprint">width</code></td>
 <td>FLOAT <br/> NOT NULL</td>
-<td>It indicates the width of landmark</td>
+<td>It indicates the <code class="prettyprint">width</code> of landmark</td>
 </tr>
 <tr>
-<td>height</td>
+<td><code class="prettyprint">height</code></td>
 <td>FLOAT <br/> NOT NULL</td>
-<td>It indicates the height of landmark</td>
+<td>It indicates the <code class="prettyprint">height</code> of landmark</td>
 </tr>
 <tr>
-<td>rotation</td>
+<td><code class="prettyprint">rotation</code></td>
 <td>FLOAT <br/> NOT NULL</td>
 <td>It indicates angle that the landmark tilts relate to the floor</td>
 </tr>
 <tr>
-<td>floor</td>
+<td><code class="prettyprint">floor</code></td>
 <td>INT <br/> NOT NULL</td>
-<td>It is a foreign key links to table floor’s floor_id, and it helps to identify which floor the landmark belongs to.</td>
+<td>It is a foreign key links to table floor’s floor_id, and it helps to identify which <code class="prettyprint">floor</code> the landmark belongs to.</td>
 </tr>
 </tbody></table>
 
@@ -1377,7 +1414,7 @@ floor refers to the floor_id, which this aisle belongs to.</p>
 </tr>
 </thead><tbody>
 <tr>
-<td>token_id</td>
+<td><code class="prettyprint">token_id</code></td>
 <td>INT <br/> NOT NULL</td>
 <td>It is the primary key of the token. It auto increments each time when a new token has been inserted into the table</td>
 </tr>
@@ -1406,17 +1443,17 @@ user_id: it is an INT, and it is the primary key of the users. It auto increment
 </tr>
 </thead><tbody>
 <tr>
-<td>userid</td>
+<td><code class="prettyprint">user_id</code></td>
 <td>INT <br/> NOT NULL</td>
 <td>It auto increments each time when a new user has been inserted into the table</td>
 </tr>
 <tr>
-<td>username</td>
+<td><code class="prettyprint">username</code></td>
 <td>CHAR(25)</td>
 <td>It saves valid username that can be used for login</td>
 </tr>
 <tr>
-<td>password</td>
+<td><code class="prettyprint">password</code></td>
 <td>CHAR(25)</td>
 <td>It saves corresponding password for each username that can be used for login</td>
 </tr>
